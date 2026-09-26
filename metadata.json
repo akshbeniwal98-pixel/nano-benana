@@ -1,0 +1,6 @@
+{
+  "name": "PromptCare - Curated AI Prompts & Tools Directory",
+  "description": "Supercharge your AI workflow with tested, high-performance prompts for ChatGPT, Midjourney, Claude, and Gemini. Discover top AI tools and resources.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

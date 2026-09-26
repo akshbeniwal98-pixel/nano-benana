@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PromptCare - Curated AI Prompts & Pinterest Feed (faymas.in clone)</title>
+  <meta name="description" content="Pinterest-style AI portrait prompt feed, Creator League, and Nano Banana Studio for promptcare.online">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .badge-glow { box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-[#0B0F19] text-slate-100 min-h-screen antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-20 lg:bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-cyan-500 text-slate-950 font-bold shadow-2xl">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+    <span id="toast-text">Prompt copied to clipboard!</span>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-[#0B0F19]/90 backdrop-blur-xl">
+    <div class="max-w-[1700px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3 shrink-0">
+        <a href="#" class="flex items-center gap-2 group">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg badge-glow">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          </div>
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-xl font-extrabold tracking-tight text-white group-hover:text-cyan-400 transition-colors">PromptCare</span>
+            <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/80 font-bold">.online</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Central Search Bar -->
+      <div class="flex-1 max-w-2xl mx-2 sm:mx-6">
+        <div class="relative flex items-center">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input 
+            type="text" 
+            id="search-input" 
+            oninput="handleSearch()"
+            placeholder="Search AI portraits, 3D wings, prompt ideas, models..." 
+            class="w-full pl-10 pr-10 py-2 sm:py-2.5 rounded-full bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs sm:text-sm shadow-inner"
+          >
+        </div>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <!-- Theme Switcher (Dark / Night / Light) -->
+        <button onclick="toggleTheme()" id="theme-btn" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white flex items-center gap-1.5 cursor-pointer" title="Toggle Theme (Dark / Night / Light)">
+          <span id="theme-icon">🌙</span>
+          <span id="theme-label" class="hidden md:inline text-xs font-semibold">Dark</span>
+        </button>
+
+        <button onclick="openStudioModal()" class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/40">
+          <span class="text-sm">🍌</span>
+          <span>Studio</span>
+        </button>
+
+        <button onclick="openLeagueModal()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-amber-400 flex items-center gap-1.5">
+          <span class="text-sm">🏆</span>
+          <span class="hidden md:inline text-xs font-semibold">League</span>
+        </button>
+
+        <button onclick="openUploadModal()" class="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-md">
+          <span class="text-sm font-black">+</span>
+          <span>Upload</span>
+        </button>
+
+        <button onclick="openAuthModal()" class="flex items-center gap-2 p-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs font-bold">
+          <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&q=80" class="w-6 h-6 rounded-full object-cover">
+          <span class="hidden sm:inline pr-2 text-slate-200">Aksh</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Body Container: Sidebar + Masonry Feed -->
+  <div class="max-w-[1700px] mx-auto flex">
+    
+    <!-- Left Sidebar (Desktop) -->
+    <aside class="hidden lg:flex flex-col justify-between w-64 shrink-0 min-h-[calc(100vh-4rem)] p-4 border-r border-slate-800/80 bg-[#0B0F19]/95 sticky top-16">
+      <div class="space-y-6">
+        <div class="space-y-1">
+          <button onclick="filterCategory('All')" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold bg-cyan-500 text-slate-950">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span>Discover Feed</span>
+          </button>
+
+          <button onclick="openStudioModal()" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold bg-amber-400/10 text-amber-300 border border-amber-400/30">
+            <div class="flex items-center gap-2">
+              <span>🍌</span>
+              <span>Nano Banana Studio</span>
+            </div>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-extrabold">AI</span>
+          </button>
+
+          <button onclick="openLeagueModal()" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-300 hover:bg-slate-900">
+            <div class="flex items-center gap-2">
+              <span>🏆</span>
+              <span>Creator League</span>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-amber-400">#4 Rank</span>
+          </button>
+
+          <button onclick="filterFavorites()" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-300 hover:bg-slate-900">
+            <svg class="w-4 h-4 text-rose-500 fill-rose-500" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span>Saved Prompts</span>
+          </button>
+        </div>
+
+        <div>
+          <button onclick="openUploadModal()" class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold text-xs shadow-lg shadow-cyan-500/20">
+            + Upload Prompt
+          </button>
+        </div>
+
+        <div>
+          <div class="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold px-3.5 mb-2.5">
+            Explore #Tags
+          </div>
+          <div class="space-y-1">
+            <button onclick="filterCategory('Viral Bing')" class="w-full text-left px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:bg-slate-900">#Viral Bing (3D Wings)</button>
+            <button onclick="filterCategory('Portraits')" class="w-full text-left px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:bg-slate-900">#Portraits (35mm)</button>
+            <button onclick="filterCategory('Aesthetic')" class="w-full text-left px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:bg-slate-900">#Aesthetic & Film</button>
+            <button onclick="filterCategory('Cyberpunk')" class="w-full text-left px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:bg-slate-900">#Cyberpunk Neon</button>
+            <button onclick="filterCategory('Fashion')" class="w-full text-left px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:bg-slate-900">#Fashion Editorial</button>
+            <button onclick="filterCategory('Anime')" class="w-full text-left px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:bg-slate-900">#Anime Aesthetic</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-slate-800 space-y-3">
+        <!-- Appearance Theme Widget -->
+        <div>
+          <div class="text-[10px] font-mono uppercase text-slate-500 font-bold mb-1.5 px-1">Theme / Appearance</div>
+          <div class="grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+            <button onclick="setTheme('dark')" id="opt-dark" class="py-1 px-1 rounded-lg text-center font-bold bg-cyan-500 text-slate-950 cursor-pointer">Dark</button>
+            <button onclick="setTheme('night')" id="opt-night" class="py-1 px-1 rounded-lg text-center text-slate-400 hover:text-white cursor-pointer">Night</button>
+            <button onclick="setTheme('light')" id="opt-light" class="py-1 px-1 rounded-lg text-center text-slate-400 hover:text-white cursor-pointer">Light</button>
+          </div>
+        </div>
+
+        <div onclick="openAuthModal()" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-900 cursor-pointer">
+          <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&q=80" class="w-9 h-9 rounded-full object-cover border border-cyan-400">
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-bold text-white truncate">Aksh Beniwal</div>
+            <div class="text-[10px] text-slate-400 font-mono">@aksh_promptcare</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Masonry Canvas -->
+    <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 pb-28 lg:pb-12">
+      <!-- Tag Pills Bar -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none mb-4" id="category-pills"></div>
+
+      <!-- Feed Title -->
+      <div class="flex items-center justify-between mb-5">
+        <h1 class="text-xl font-extrabold text-white flex items-center gap-2">
+          <span id="feed-title">Trending Community Prompts</span>
+          <span id="feed-count" class="text-xs font-mono px-2 py-0.5 rounded-full bg-slate-800 text-cyan-400 border border-slate-700">10</span>
+        </h1>
+      </div>
+
+      <!-- Pinterest Columns Masonry Grid -->
+      <div id="masonry-feed" class="columns-2 sm:columns-2 md:columns-3 lg:columns-3 xl:columns-4 2xl:columns-5 gap-4 space-y-4"></div>
+    </main>
+
+  </div>
+
+  <!-- Mobile Bottom 5-Icon Navigation -->
+  <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#0B0F19]/95 backdrop-blur-xl border-t border-slate-800 py-2 px-3">
+    <div class="flex items-center justify-around max-w-md mx-auto">
+      <button onclick="filterCategory('All')" class="flex flex-col items-center gap-1 text-cyan-400 font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        <span class="text-[10px]">Feed</span>
+      </button>
+
+      <button onclick="document.getElementById('search-input').focus()" class="flex flex-col items-center gap-1 text-slate-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <span class="text-[10px]">Explore</span>
+      </button>
+
+      <button onclick="openUploadModal()" class="relative -top-3 w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 flex items-center justify-center shadow-lg font-black text-2xl">
+        +
+      </button>
+
+      <button onclick="openStudioModal()" class="flex flex-col items-center gap-1 text-amber-300">
+        <span class="text-lg leading-none">🍌</span>
+        <span class="text-[10px] font-bold">Studio</span>
+      </button>
+
+      <button onclick="openAuthModal()" class="flex flex-col items-center gap-1 text-slate-400">
+        <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&q=80" class="w-5 h-5 rounded-full object-cover">
+        <span class="text-[10px]">Profile</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detail-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-5 bg-slate-950/90 backdrop-blur-md">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto p-5 sm:p-7 relative">
+      <button onclick="closeDetailModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">✕</button>
+      
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+        <div class="md:col-span-5 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800">
+          <img id="detail-img" src="" class="w-full h-auto object-cover">
+        </div>
+
+        <div class="md:col-span-7 space-y-4">
+          <div class="flex items-center gap-2">
+            <span id="detail-model" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-950 text-cyan-400 border border-cyan-800"></span>
+            <span id="detail-category" class="text-xs text-slate-400 font-medium"></span>
+          </div>
+
+          <h2 id="detail-title" class="text-2xl font-extrabold text-white"></h2>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-bold text-slate-300">Tested AI Prompt:</span>
+              <button onclick="copyDetailPrompt()" class="text-xs text-cyan-400 font-bold">Copy Prompt</button>
+            </div>
+            <pre id="detail-prompt-text" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs sm:text-sm font-mono text-cyan-200 whitespace-pre-wrap max-h-48 overflow-y-auto leading-relaxed"></pre>
+          </div>
+
+          <button onclick="copyDetailPrompt()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold text-sm shadow-lg">
+            📋 1-Click Copy Full Prompt
+          </button>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+            <button onclick="tryCurrentInStudio()" class="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5">
+              <span>🍌</span>
+              <span>Open in Nano Banana Studio</span>
+            </button>
+            <button onclick="closeDetailModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nano Banana Studio Modal (ChatGPT Style Real Photo Prompt Copilot) -->
+  <div id="studio-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-5 bg-slate-950/90 backdrop-blur-md">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-y-auto p-6 relative">
+      <button onclick="closeStudioModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">✕</button>
+
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-2xl">🍌</span>
+        <h3 class="text-xl font-black text-white">Nano Banana AI Studio</h3>
+        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-bold">ChatGPT Mode</span>
+      </div>
+      <p class="text-xs text-slate-400 mb-4">Apna photo idea likhein—Nano Banana aapke liye 100% realistic prompt with camera specs (85mm, lighting) bana dega!</p>
+
+      <div class="space-y-4">
+        <!-- Quick prompt chips -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <button onclick="setChatQuery('3D boy with glowing neon wings, name AKSH on black jacket')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white border border-slate-700 shrink-0">🪽 3D Wings Name</button>
+          <button onclick="setChatQuery('Aesthetic 35mm vintage film portrait of an Indian girl in Delhi market')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white border border-slate-700 shrink-0">📸 35mm Vintage</button>
+          <button onclick="setChatQuery('Stylish 24-year-old boy on matte black bullet bike under neon street lights')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white border border-slate-700 shrink-0">🏍️ Bullet Rider</button>
+          <button onclick="setChatQuery('Royal Indian bride in heavy crimson lehenga with antique gold jewelry')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white border border-slate-700 shrink-0">👑 Royal Bride</button>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-200 mb-1">Apna Photo Idea Likhein (Hindi / Hinglish / English) *</label>
+          <textarea id="studio-prompt" rows="3" placeholder="e.g. '24 saal ka ladka bullet bike par night lights me with name AKSH' ya 'royal traditional bride with 35mm lens'..." class="w-full px-3.5 py-2.5 rounded-2xl bg-slate-950 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:ring-1 focus:ring-amber-400"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="runRealPromptGeneration()" class="py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs sm:text-sm shadow-lg flex items-center justify-center gap-1.5 cursor-pointer">
+            <span>🍌</span>
+            <span>Generate Real Prompt (ChatGPT)</span>
+          </button>
+          <button onclick="copyGeneratedStudioPrompt()" class="py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm border border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer">
+            <span>📋</span>
+            <span>Copy Prompt</span>
+          </button>
+        </div>
+
+        <div id="studio-preview-box" class="hidden text-left p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <span id="studio-prompt-title" class="text-xs font-bold text-amber-300">Generated Prompt</span>
+            <span id="studio-camera-spec" class="text-[10px] font-mono text-slate-400">Sony A7R V · 85mm f/1.4</span>
+          </div>
+          <div id="studio-prompt-result" class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-cyan-200 leading-relaxed select-all"></div>
+          
+          <!-- 4 Variations Grid -->
+          <div class="pt-2">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-amber-400">✨ 4 Simultaneous Variations:</span>
+              <span class="text-[10px] text-slate-400">(Click to select your favorite ⭐)</span>
+            </div>
+            <div id="studio-variations-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5"></div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-800">
+            <div class="flex items-center gap-1.5 text-xs text-slate-300">
+              <span class="text-amber-400">⭐</span>
+              <span>Selected Favorite: <strong id="fav-label" class="text-amber-400">V1</strong></span>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <button onclick="publishStudioResult()" class="flex-1 sm:flex-initial py-2 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs cursor-pointer">
+                🚀 Publish Favorite to Feed
+              </button>
+              <a id="studio-bing-link" href="#" target="_blank" class="py-2 px-3 rounded-xl bg-blue-900/40 border border-blue-700/60 text-blue-300 text-xs font-semibold">
+                Try on Bing ↗
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Modal -->
+  <div id="upload-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-5 bg-slate-950/90 backdrop-blur-md">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-xl w-full max-h-[92vh] overflow-y-auto p-6 relative">
+      <button onclick="closeUploadModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">✕</button>
+
+      <h3 class="text-xl font-bold text-white mb-1">Post Photo & AI Prompt</h3>
+      <p class="text-xs text-slate-400 mb-5">Share an AI portrait to the Pinterest-style masonry feed.</p>
+
+      <form onsubmit="handleUploadSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-200 mb-1">Title *</label>
+          <input type="text" id="up-title" required placeholder="e.g. 3D Wings Neon Boy DP" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-200 mb-1">Model *</label>
+            <select id="up-model" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+              <option value="Bing Image Creator">Bing Image Creator</option>
+              <option value="Nano Banana">🍌 Nano Banana AI</option>
+              <option value="Midjourney v6">Midjourney v6</option>
+              <option value="FLUX.1">FLUX.1</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-200 mb-1">Category *</label>
+            <select id="up-cat" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+              <option value="Viral Bing">Viral Bing</option>
+              <option value="Portraits">Portraits</option>
+              <option value="Aesthetic">Aesthetic</option>
+              <option value="Cyberpunk">Cyberpunk</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-200 mb-1">Image URL *</label>
+          <input type="url" id="up-image" required value="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-200 mb-1">Tested Prompt *</label>
+          <textarea id="up-prompt" required rows="4" placeholder="Paste full prompt here..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono text-xs"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3">
+          <button type="button" onclick="closeUploadModal()" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 text-xs">Cancel</button>
+          <button type="submit" class="px-6 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs">Publish to Feed</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const defaultPrompts = [
+      {
+        id: 'p-1',
+        title: '3D Wings Neon Name Art (Viral DP)',
+        category: 'Viral Bing',
+        model: 'Bing Image Creator',
+        imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+        aspectRatio: '1:1',
+        promptTemplate: 'Create a realistic 3D illusion of a stylish 20-year-old boy sitting comfortably on a glowing futuristic throne. The character is wearing a casual black oversized hoodie with sneakers and dark sunglasses. Behind the throne are majestic glowing cyan neon wings. The background features a dark obsidian wall with the name "AKSH" boldly illuminated in 3D glowing neon typography. Volumetric smoke, 8k resolution, cinematic lighting.',
+        likes: 1420,
+        copies: 8940,
+        creator: 'Viral Bing Hub'
+      },
+      {
+        id: 'p-2',
+        title: 'Cinematic 35mm Vintage Kodak Portrait',
+        category: 'Portraits',
+        model: 'Midjourney v6',
+        imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+        aspectRatio: '3:4',
+        promptTemplate: 'cinematic 35mm photograph of a thoughtful 24-year-old woman in minimalist linen shirt, captured on Kodak Portra 400 film, natural subtle pores and freckles, soft warm afternoon sidelight, shallow depth of field, f/1.8 lens, detailed background of sunlit balcony garden, muted cinematic color grading, authentic film grain, photorealistic, 8k --ar 3:4 --style raw --v 6.0',
+        likes: 1890,
+        copies: 6420,
+        creator: 'Elena Rostova'
+      },
+      {
+        id: 'p-3',
+        title: 'Neon Cyberpunk Street Samurai Portrait',
+        category: 'Cyberpunk',
+        model: 'Nano Banana',
+        imageUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80',
+        aspectRatio: '9:16',
+        promptTemplate: 'cyberpunk portrait of an urban street mercenary standing in a rain-drenched Tokyo back-alley, illuminated by neon magenta and cyan holographic signs. Wearing black modular techwear jacket with luminous collar, transparent cyber-visors reflecting street lights, volumetric steam rising from asphalt, cinematic 8k photograph',
+        likes: 960,
+        copies: 4810,
+        creator: 'Mei Lin'
+      },
+      {
+        id: 'p-4',
+        title: 'Aesthetic Sunset Couple Golden Hour',
+        category: 'Aesthetic',
+        model: 'Bing Image Creator',
+        imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+        aspectRatio: '3:4',
+        promptTemplate: 'A realistic candid 35mm photo of a stylish young couple laughing together on a rooftop cafe during golden hour sunset. Soft amber sun rays creating gentle lens flare, wind blowing through hair, city skyline softly blurred in background, natural candid smiles, authentic film grain, ultra-detailed 8k resolution',
+        likes: 1340,
+        copies: 5930,
+        creator: 'Aarav Mehta'
+      },
+      {
+        id: 'p-5',
+        title: 'High-Fashion Studio Monochrome Portrait',
+        category: 'Fashion',
+        model: 'FLUX.1',
+        imageUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+        aspectRatio: '3:4',
+        promptTemplate: 'editorial high-fashion black and white studio portrait of a handsome model, strong chiaroscuro lighting inspired by Peter Lindbergh, dramatic shadow play across cheekbones, silk shirt collar slightly unbuttoned, Leica M11 Monochrom, 8k resolution',
+        likes: 820,
+        copies: 3670,
+        creator: 'Elena Rostova'
+      },
+      {
+        id: 'p-6',
+        title: 'Y2K Retro Flash Portrait with Sunglasses',
+        category: 'Aesthetic',
+        model: 'Nano Banana',
+        imageUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+        aspectRatio: '9:16',
+        promptTemplate: 'raw direct-flash candid photo of a stylish 21-year-old girl in Y2K fashion, wearing oversized silver sunglasses and metallic cropped jacket, shot on vintage Olympus Stylus Epic 35mm point-and-shoot camera, hard shadows on white wall behind, authentic vintage film grain',
+        likes: 1150,
+        copies: 5120,
+        creator: 'Aksh Beniwal'
+      }
+    ];
+
+    let prompts = JSON.parse(localStorage.getItem('faymas_prompts')) || defaultPrompts;
+    let selectedCat = 'All';
+    let searchQuery = '';
+    let activeDetail = null;
+    const cats = ['All', 'Viral Bing', 'Portraits', 'Aesthetic', 'Cyberpunk', 'Fashion'];
+
+    function renderFeed() {
+      let filtered = prompts.filter(p => {
+        const mCat = selectedCat === 'All' || p.category === selectedCat;
+        const q = searchQuery.toLowerCase().trim();
+        const mSearch = !q || p.title.toLowerCase().includes(q) || p.promptTemplate.toLowerCase().includes(q);
+        return mCat && mSearch;
+      });
+
+      document.getElementById('feed-count').textContent = filtered.length;
+      document.getElementById('feed-title').textContent = selectedCat === 'All' ? 'Trending Community Prompts' : `#${selectedCat} Prompts`;
+
+      document.getElementById('masonry-feed').innerHTML = filtered.map(p => `
+        <div onclick="openDetail('${p.id}')" class="break-inside-avoid mb-4 group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-cyan-500/50 shadow-md transition-all cursor-pointer">
+          <div class="relative w-full overflow-hidden bg-slate-950">
+            <img src="${p.imageUrl}" class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500">
+            
+            <div class="absolute top-2.5 left-2.5 z-10">
+              <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-black/60 text-white border border-white/20">
+                ${p.model}
+              </span>
+            </div>
+
+            <!-- Overlay -->
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 z-10">
+              <button onclick="event.stopPropagation(); copyDirect('${p.id}')" class="w-full py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 shadow-lg mb-2">
+                📋 Copy Prompt
+              </button>
+              <div class="flex items-center justify-between text-[11px] text-white">
+                <span class="truncate font-semibold">${p.creator}</span>
+                <span class="text-rose-400">❤️ ${p.likes}</span>
+              </div>
+            </div>
+          </div>
+          <div class="p-3">
+            <h3 class="text-xs font-bold text-slate-200 truncate">${p.title}</h3>
+            <span class="text-[10px] text-slate-400 font-mono">${p.copies} copies</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderCategories() {
+      document.getElementById('category-pills').innerHTML = cats.map(c => `
+        <button onclick="filterCategory('${c}')" class="px-4 py-2 rounded-full text-xs font-bold shrink-0 ${
+          selectedCat === c ? 'bg-white text-slate-950 shadow-md' : 'bg-slate-900 border border-slate-800 text-slate-300'
+        }">#${c}</button>
+      `).join('');
+    }
+
+    function filterCategory(c) { selectedCat = c; renderCategories(); renderFeed(); }
+    function handleSearch() { searchQuery = document.getElementById('search-input').value; renderFeed(); }
+
+    function copyDirect(id) {
+      const p = prompts.find(x => x.id === id);
+      if (p) {
+        navigator.clipboard.writeText(p.promptTemplate);
+        showToast('Prompt copied to clipboard!');
+      }
+    }
+
+    function openDetail(id) {
+      const p = prompts.find(x => x.id === id);
+      if (!p) return;
+      activeDetail = p;
+      document.getElementById('detail-img').src = p.imageUrl;
+      document.getElementById('detail-title').textContent = p.title;
+      document.getElementById('detail-model').textContent = p.model;
+      document.getElementById('detail-category').textContent = '#' + p.category;
+      document.getElementById('detail-prompt-text').textContent = p.promptTemplate;
+      document.getElementById('detail-modal').classList.remove('hidden');
+      document.getElementById('detail-modal').classList.add('flex');
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detail-modal').classList.add('hidden');
+      document.getElementById('detail-modal').classList.remove('flex');
+    }
+
+    function copyDetailPrompt() {
+      if (activeDetail) {
+        navigator.clipboard.writeText(activeDetail.promptTemplate);
+        showToast('Prompt copied to clipboard!');
+      }
+    }
+
+    function tryCurrentInStudio() {
+      if (activeDetail) {
+        closeDetailModal();
+        document.getElementById('studio-prompt').value = activeDetail.promptTemplate;
+        openStudioModal();
+      }
+    }
+
+    function openStudioModal() {
+      document.getElementById('studio-modal').classList.remove('hidden');
+      document.getElementById('studio-modal').classList.add('flex');
+    }
+
+    function closeStudioModal() {
+      document.getElementById('studio-modal').classList.add('hidden');
+      document.getElementById('studio-modal').classList.remove('flex');
+    }
+
+    function setChatQuery(idea) {
+      document.getElementById('studio-prompt').value = idea;
+      runRealPromptGeneration();
+    }
+
+    let lastGeneratedPrompt = '';
+
+    let currentVariations = [];
+    let selectedFavoriteIdx = 0;
+
+    function renderStudioVariationsGrid(vars) {
+      currentVariations = vars;
+      const grid = document.getElementById('studio-variations-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      vars.forEach((v, idx) => {
+        const isFav = idx === selectedFavoriteIdx;
+        const card = document.createElement('div');
+        card.className = `group relative rounded-xl overflow-hidden cursor-pointer border transition-all ${
+          isFav ? 'ring-3 ring-amber-400 border-amber-400 shadow-lg scale-102' : 'border-slate-800 opacity-80 hover:opacity-100'
+        }`;
+        card.onclick = () => selectStudioFavorite(idx);
+        card.innerHTML = `
+          <div class="aspect-square bg-slate-950 overflow-hidden">
+            <img src="${v.url}" class="w-full h-full object-cover">
+          </div>
+          <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
+            isFav ? 'bg-amber-400 text-slate-950' : 'bg-black/75 text-white'
+          }">${v.label}</span>
+          <div class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center ${
+            isFav ? 'bg-amber-400 text-slate-950' : 'bg-black/60 text-white'
+          }">⭐</div>
+          <div class="p-1.5 text-[9px] truncate ${isFav ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-950 text-slate-300'}">
+            ${v.tweak}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      const fav = vars[selectedFavoriteIdx] || vars[0];
+      const favLabel = document.getElementById('fav-label');
+      if (favLabel && fav) favLabel.textContent = `${fav.label} (${fav.tweak})`;
+    }
+
+    function selectStudioFavorite(idx) {
+      selectedFavoriteIdx = idx;
+      renderStudioVariationsGrid(currentVariations);
+      showToast(`Selected ${currentVariations[idx].label} as favorite! ⭐`);
+    }
+
+    function runRealPromptGeneration() {
+      const input = document.getElementById('studio-prompt').value.trim();
+      if (!input) {
+        showToast('Pehle photo idea likhein!');
+        return;
+      }
+
+      showToast('Nano Banana 4 variations generate kar raha hai... 🍌');
+      const box = document.getElementById('studio-preview-box');
+      box.classList.remove('hidden');
+
+      const lower = input.toLowerCase();
+      let promptTitle = 'Photorealistic AI Portrait';
+      let cameraSpec = 'Sony A7R V · 85mm f/1.4 GM · Volumetric Rim Light';
+      let promptText = '';
+      let vars = [];
+
+      if (lower.includes('wing') || lower.includes('throne') || lower.includes('pankh') || lower.includes('3d')) {
+        promptTitle = '3D Neon Angel Wings Portrait';
+        cameraSpec = 'Digital Cinema 3D Render · Octane Render 8K · Volumetric Rim Lighting';
+        promptText = `Hyperrealistic 3D digital portrait of a stylish confident young Indian man in black streetwear, sitting relaxedly on an ornate dark obsidian throne. Behind him are magnificent glowing cyan feathered angel wings emitting soft particle embers. On the dark textured wall, name "AKSH" is written in sleek 3D neon glow typography. Volumetric rim lighting, hyper-detailed skin texture, 8k resolution, Unreal Engine 5 render --ar 1:1 --v 6.0`;
+        vars = [
+          { url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80', label: 'V1', tweak: 'Cyan Electric Wings' },
+          { url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80', label: 'V2', tweak: 'Golden Angelic Embers' },
+          { url: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=800&q=80', label: 'V3', tweak: 'Dark Fantasy Obsidian' },
+          { url: 'https://images.unsplash.com/photo-1614741118887-7a4ee193a5fa?auto=format&fit=crop&w=800&q=80', label: 'V4', tweak: 'Violet Particle Aura' }
+        ];
+      } else if (lower.includes('bike') || lower.includes('bullet') || lower.includes('rider')) {
+        promptTitle = 'Cinematic Royal Enfield Night Rider';
+        cameraSpec = 'Sony A7R V · 50mm f/1.2 GM · ISO 400 · Street Wet Reflections';
+        promptText = `Cinematic night photography of a rugged stylish 24-year-old man seated on a custom vintage matte-black Royal Enfield motorcycle on a rain-slicked city avenue. Distressed leather jacket with "AKSH" subtly embossed on chest. Wet road reflections, soft golden streetlight backlighting, natural skin pores, 8k resolution, masterwork photography --ar 16:9 --v 6.0`;
+        vars = [
+          { url: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=800&q=80', label: 'V1', tweak: 'Rain Wet Reflections' },
+          { url: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=800&q=80', label: 'V2', tweak: 'Golden Highway Cruiser' },
+          { url: 'https://images.unsplash.com/photo-1508974239320-0a029497e820?auto=format&fit=crop&w=800&q=80', label: 'V3', tweak: 'Industrial Garage Vintage' },
+          { url: 'https://images.unsplash.com/photo-1547025603-ef9367123d24?auto=format&fit=crop&w=800&q=80', label: 'V4', tweak: 'Cyber Neon Street' }
+        ];
+      } else if (lower.includes('wedding') || lower.includes('bride') || lower.includes('saree') || lower.includes('royal')) {
+        promptTitle = 'Royal Heritage Traditional Indian Portrait';
+        cameraSpec = 'Canon EOS R5 · 85mm f/1.4L · Natural Courtyard Golden Light';
+        promptText = `Award-winning portrait of an elegant royal Indian bride adorned in an authentic crimson raw silk lehenga with handcrafted antique gold zardozi embroidery and Polki diamond jewelry. Sunlit carved sandstone jharokha of a Rajasthani heritage palace during golden hour, soft natural warmth, 8k photorealistic, Vogue India aesthetic --ar 3:4 --v 6.0`;
+        vars = [
+          { url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80', label: 'V1', tweak: 'Courtyard Golden Hour' },
+          { url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80', label: 'V2', tweak: 'Polki Jewelry Macro' },
+          { url: 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?auto=format&fit=crop&w=800&q=80', label: 'V3', tweak: 'Palace Jharokha Sidelight' },
+          { url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80', label: 'V4', tweak: 'Vogue India Studio' }
+        ];
+      } else {
+        promptTitle = 'Photorealistic 35mm Film Portrait: ' + input.slice(0, 24);
+        cameraSpec = 'Sony A7 IV · 85mm f/1.4 · Window Daylight · Kodak Portra 400';
+        promptText = `An award-winning ultra-photorealistic portrait of ${input}, with natural human skin micro-texture, authentic skin pores, delicate catchlight in eyes, soft directional window sunlight, shot on Sony A7 IV with 85mm f/1.4 G-Master lens, shallow depth of field, authentic 35mm Kodak Portra 400 film tones, highly detailed, 8k resolution --ar 1:1 --v 6.0 --style raw`;
+        vars = [
+          { url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80', label: 'V1', tweak: '35mm Daylight' },
+          { url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80', label: 'V2', tweak: 'Dramatic Rim Light' },
+          { url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80', label: 'V3', tweak: 'Y2K Retro Flash' },
+          { url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80', label: 'V4', tweak: 'Golden Hour Bokeh' }
+        ];
+      }
+
+      selectedFavoriteIdx = 0;
+      lastGeneratedPrompt = promptText;
+      document.getElementById('studio-prompt-title').textContent = promptTitle;
+      document.getElementById('studio-camera-spec').textContent = cameraSpec;
+      document.getElementById('studio-prompt-result').textContent = promptText;
+      document.getElementById('studio-bing-link').href = 'https://www.bing.com/images/create?q=' + encodeURIComponent(promptText);
+
+      renderStudioVariationsGrid(vars);
+      showToast('4 Variations generated simultaneously! Select your favorite ⭐');
+    }
+
+    function publishStudioResult() {
+      const fav = currentVariations[selectedFavoriteIdx] || currentVariations[0] || {
+        url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+        label: 'V1'
+      };
+      const text = lastGeneratedPrompt || document.getElementById('studio-prompt').value || 'Nano Banana Generated Portrait';
+      prompts.unshift({
+        id: 'nb-' + Date.now(),
+        title: (text.slice(0, 36) + '... (' + fav.label + ')'),
+        category: 'Portraits',
+        model: 'Nano Banana',
+        imageUrl: fav.url,
+        promptTemplate: text,
+        likes: 1, copies: 0, creator: 'Aksh Beniwal'
+      });
+      localStorage.setItem('faymas_prompts', JSON.stringify(prompts));
+      closeStudioModal();
+      showToast('Favorite variation published to feed! 🚀');
+      renderFeed();
+    }
+
+    function copyGeneratedStudioPrompt() {
+      const text = lastGeneratedPrompt || document.getElementById('studio-prompt').value;
+      if (!text) {
+        showToast('Pehle prompt generate karein!');
+        return;
+      }
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Prompt copied! Ready for Bing Image Creator & Midjourney');
+      });
+    }
+
+    function runStudioGeneration() {
+      runRealPromptGeneration();
+    }
+
+    function publishStudioResult() {
+      const text = document.getElementById('studio-prompt').value || 'Nano Banana Generated Portrait';
+      prompts.unshift({
+        id: 'nb-' + Date.now(),
+        title: text.slice(0, 36) + '...',
+        category: 'Portraits',
+        model: 'Nano Banana',
+        imageUrl: document.getElementById('studio-result-img').src,
+        promptTemplate: text,
+        likes: 1, copies: 0, creator: 'Aksh Beniwal'
+      });
+      localStorage.setItem('faymas_prompts', JSON.stringify(prompts));
+      closeStudioModal();
+      showToast('Published to feed!');
+      renderFeed();
+    }
+
+    function openUploadModal() {
+      document.getElementById('upload-modal').classList.remove('hidden');
+      document.getElementById('upload-modal').classList.add('flex');
+    }
+
+    function closeUploadModal() {
+      document.getElementById('upload-modal').classList.add('hidden');
+      document.getElementById('upload-modal').classList.remove('flex');
+    }
+
+    function handleUploadSubmit(e) {
+      e.preventDefault();
+      const title = document.getElementById('up-title').value;
+      const model = document.getElementById('up-model').value;
+      const category = document.getElementById('up-cat').value;
+      const imageUrl = document.getElementById('up-image').value;
+      const promptTemplate = document.getElementById('up-prompt').value;
+
+      prompts.unshift({
+        id: 'u-' + Date.now(),
+        title, model, category, imageUrl, promptTemplate,
+        likes: 1, copies: 0, creator: 'Aksh Beniwal'
+      });
+      localStorage.setItem('faymas_prompts', JSON.stringify(prompts));
+      closeUploadModal();
+      showToast('Prompt posted to feed!');
+      renderFeed();
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-text').textContent = msg;
+      t.classList.remove('translate-y-20', 'opacity-0');
+      t.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        t.classList.remove('translate-y-0', 'opacity-100');
+        t.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    // Theme switching logic (Dark, Night, Light)
+    let currentTheme = localStorage.getItem('promptcare_theme') || 'dark';
+
+    function setTheme(mode) {
+      currentTheme = mode;
+      localStorage.setItem('promptcare_theme', mode);
+      applyTheme(mode);
+    }
+
+    function toggleTheme() {
+      if (currentTheme === 'dark') setTheme('night');
+      else if (currentTheme === 'night') setTheme('light');
+      else setTheme('dark');
+    }
+
+    function applyTheme(mode) {
+      const body = document.body;
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('theme-icon');
+      const themeLabel = document.getElementById('theme-label');
+
+      ['opt-dark', 'opt-night', 'opt-light'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.className = 'py-1 px-1 rounded-lg text-center cursor-pointer ' + 
+            (id === 'opt-' + mode ? 'font-bold bg-cyan-500 text-slate-950' : 'text-slate-400 hover:text-white');
+        }
+      });
+
+      if (mode === 'night') {
+        html.className = 'dark';
+        body.className = 'bg-[#000000] text-zinc-100 min-h-screen antialiased selection:bg-cyan-500/30 selection:text-cyan-200';
+        if (themeIcon) themeIcon.textContent = '🌌';
+        if (themeLabel) themeLabel.textContent = 'Night';
+      } else if (mode === 'light') {
+        html.className = 'light';
+        body.className = 'bg-[#F8FAFC] text-slate-900 min-h-screen antialiased selection:bg-cyan-500/30 selection:text-cyan-900';
+        if (themeIcon) themeIcon.textContent = '☀️';
+        if (themeLabel) themeLabel.textContent = 'Light';
+      } else {
+        html.className = 'dark';
+        body.className = 'bg-[#0B0F19] text-slate-100 min-h-screen antialiased selection:bg-cyan-500/30 selection:text-cyan-200';
+        if (themeIcon) themeIcon.textContent = '🌙';
+        if (themeLabel) themeLabel.textContent = 'Dark';
+      }
+    }
+
+    applyTheme(currentTheme);
+    renderCategories();
+    renderFeed();
+  </script>
+</body>
+</html>
